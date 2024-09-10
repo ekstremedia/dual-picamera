@@ -1,13 +1,11 @@
-
-# camera_module.py
-
 from picamera2 import Picamera2
 import time
 
-def take_photo(camera_index, output_path, shutter=None, gain=None, awb=None):
+def take_photo(camera_index, output_path, shutter=None, gain=None, awb=None, raw_path=None, only_raw=False):
     picam2 = Picamera2(camera_num=camera_index)
     
-    config = picam2.create_still_configuration()
+    # Create configuration for still capture (JPEG or RAW)
+    config = picam2.create_still_configuration(raw={}, display=None)  # Enable raw capture
 
     # Apply settings if provided
     if shutter:
@@ -20,5 +18,18 @@ def take_photo(camera_index, output_path, shutter=None, gain=None, awb=None):
     picam2.configure(config)
     picam2.start()
     time.sleep(2)  # Give some time to stabilize
-    picam2.capture_file(output_path)
+
+    # If only RAW is requested, capture only RAW
+    if only_raw and raw_path:
+        picam2.capture_request().save_dng(raw_path)
+        print(f"RAW image saved at {raw_path}")
+    else:
+        # Otherwise capture JPEG and optionally RAW
+        if output_path:
+            picam2.capture_file(output_path)
+            print(f"JPEG image saved at {output_path}")
+        if raw_path:
+            picam2.capture_request().save_dng(raw_path)
+            print(f"RAW image saved at {raw_path}")
+    
     picam2.stop()
